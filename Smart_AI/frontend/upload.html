@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mitra Fill</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f5f6fa;--surface:#fff;--elevated:#f0f1f5;--hover:#e8eaf0;
+      --border:#d8dce8;--accent:#2563eb;--accent-dim:#1d4ed8;
+      --accent-light:#eff4ff;--green:#16a34a;--green-light:#f0fdf4;
+      --green-border:#bbf7d0;--amber:#b45309;--red:#dc2626;
+      --text:#111827;--text-2:#4b5563;--text-3:#9ca3af;
+      --shadow:0 1px 3px rgba(0,0,0,0.08);--shadow-md:0 4px 12px rgba(0,0,0,0.09);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      font-size:14px;color:var(--text);background:var(--bg);
+    }
+    body{min-height:100vh;display:flex;flex-direction:column;}
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    .header{display:flex;align-items:center;justify-content:space-between;
+      padding:0 28px;height:56px;background:var(--surface);
+      border-bottom:2px solid var(--accent);box-shadow:var(--shadow);}
+    .brand{display:flex;align-items:center;gap:9px;}
+    .brand-logo{width:28px;height:28px;border-radius:6px;background:var(--accent);
+      display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;}
+    .brand-name{font-size:16px;font-weight:800;letter-spacing:-0.4px;}
+    .brand-name em{font-style:normal;color:var(--accent);}
+    .status-pill{display:flex;align-items:center;gap:5px;padding:3px 9px;
+      border-radius:20px;background:#f4f6fa;border:1px solid #e4e7ef;
+      font-size:10px;color:#6b7280;margin-top:8px;width:fit-content;}
+    .status-dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;}
+    .status-dot.online{background:#22c55e;}
+
+    /* ── Main layout ──────────────────────────────────────────────── */
+    .main{flex:1;display:flex;align-items:flex-start;justify-content:center;
+      padding:32px 50px;gap:24px;max-width:900px;margin:0 auto;width:100%;}
+
+    /* ── Left: upload area ────────────────────────────────────────── */
+    .upload-col{flex:1;display:flex;flex-direction:column;gap:14px;}
+
+    /* Drop zone */
+    .drop-zone{border:2.5px dashed var(--border);border-radius:14px;
+      background:var(--surface);text-align:center;padding:40px 24px;
+      cursor:pointer;transition:all 0.2s;position:relative;}
+    .drop-zone:hover,.drop-zone.drag-over{
+      border-color:var(--accent);background:var(--accent-light);}
+    .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .drop-icon{font-size:44px;margin-bottom:12px;display:block;}
+    .drop-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;}
+    .drop-sub{font-size:13px;color:var(--text-2);margin-bottom:16px;}
+    .drop-formats{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+    .fmt-badge{padding:3px 10px;border-radius:20px;background:var(--elevated);
+      border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-2);}
+    .drop-limit{font-size:11px;color:var(--text-3);margin-top:8px;}
+
+    /* Contact inputs */
+    .contact-section{background:var(--surface);border:1.5px solid var(--border);
+      border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);}
+    .contact-title{font-size:11px;font-weight:700;letter-spacing:0.6px;
+      text-transform:uppercase;color:var(--text);margin-bottom:10px;}
+    .contact-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .inp-group{display:flex;flex-direction:column;gap:4px;}
+    .inp-label{font-size:11px;font-weight:600;color:var(--text-2);}
+    .inp{padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;
+      font-size:13px;color:var(--text);outline:none;background:var(--bg);
+      transition:border-color 0.15s,box-shadow 0.15s;}
+    .inp:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+    .inp.invalid{border-color:#dc2626;background:#fef2f2;}
+    .inp.invalid:focus{box-shadow:0 0 0 3px rgba(220,38,38,0.1);}
+    .inp-error{font-size:11px;color:#dc2626;margin-top:3px;min-height:14px;}
+    .inp::placeholder{color:var(--text-3);}
+    /* Divider between the Contact Details and Photo/Signature parts of the
+       now-unified panel below — replaces what used to be a visible gap
+       between three separate bordered boxes. */
+    .details-divider{height:1px;background:var(--border);margin:14px 0;}
+
+    /* ── Exam / application selector ─────────────────────────────────── */
+    .exam-card{background:var(--surface);border:1.5px solid var(--border);
+      border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);}
+    .exam-label{display:block;font-size:11px;font-weight:700;letter-spacing:0.6px;
+      text-transform:uppercase;color:var(--text);margin-bottom:8px;}
+    .exam-select{width:100%;padding:9px 11px;border:1.5px solid var(--border);
+      border-radius:7px;font-size:13px;color:var(--text);background:var(--bg);
+      outline:none;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
+    .exam-select:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+    .exam-hint-global{font-size:11px;color:var(--text-3);margin-top:7px;}
+
+    /* ── Applicant assets (photo / signature) ───────────────────────── */
+    /* No longer its own bordered card — nested inside the same unified
+       panel as Contact Details, separated only by .details-divider above,
+       so the whole "additional info" area reads as one cohesive section
+       instead of three stacked boxes. */
+    .assets-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .asset-card{padding:0;}
+    .asset-card-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+    .asset-icon{font-size:15px;}
+    .asset-title{font-size:12px;font-weight:700;color:var(--text-2);flex:1;}
+    .asset-optional{font-size:10px;color:var(--text-3);font-weight:600;
+      background:var(--elevated);padding:2px 7px;border-radius:20px;}
+    .asset-hint{font-size:10px;color:var(--accent);font-weight:600;margin-bottom:8px;}
+    .asset-upload-btn{display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:4px;padding:20px 10px;border:2px dashed var(--border);
+      border-radius:8px;cursor:pointer;font-size:12px;color:var(--text-2);
+      font-weight:600;transition:all 0.15s;position:relative;text-align:center;}
+    .asset-upload-btn:hover{border-color:var(--accent);background:var(--accent-light);}
+    .asset-upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+    .asset-preview{display:flex;flex-direction:column;align-items:center;gap:6px;}
+    .asset-preview img{max-width:100%;max-height:100px;border-radius:6px;
+      border:1px solid var(--border);object-fit:contain;background:var(--elevated);}
+    .asset-size{font-size:10px;font-weight:700;color:var(--green);
+      background:var(--green-light);border:1px solid var(--green-border);
+      padding:1px 8px;border-radius:20px;}
+    .asset-size.over{color:var(--amber);background:#fffbeb;border-color:#fde68a;}
+    .asset-actions{display:flex;gap:6px;}
+    .asset-download,.asset-remove{background:none;border:none;font-size:11px;
+      font-weight:600;cursor:pointer;padding:3px 8px;border-radius:5px;
+      text-decoration:none;}
+    .asset-download{color:var(--accent);}
+    .asset-download:hover{background:var(--accent-light);}
+    .asset-remove{color:var(--red);}
+    .asset-remove:hover{background:#fef2f2;}
+    .asset-loading{padding:20px 10px;text-align:center;font-size:12px;color:var(--text-3);}
+
+    /* ── Right: file list + extract ───────────────────────────────── */
+    .right-col{width:280px;flex-shrink:0;display:flex;flex-direction:column;
+      gap:14px;position:sticky;top:72px;}
+
+    /* File list card */
+    .files-card{background:var(--surface);border:1.5px solid var(--border);
+      border-radius:10px;overflow:hidden;box-shadow:var(--shadow-md);}
+    .files-header{padding:11px 14px;background:var(--elevated);
+      border-bottom:1px solid var(--border);
+      font-size:12px;font-weight:700;color:var(--text-2);
+      display:flex;align-items:center;justify-content:space-between;}
+    .files-count{font-size:11px;color:var(--text-3);font-weight:400;}
+    .files-empty{padding:28px 14px;text-align:center;color:var(--text-3);font-size:13px;}
+    .files-empty-icon{font-size:28px;margin-bottom:8px;}
+
+    .file-list{max-height:320px;overflow-y:auto;}
+    .file-item{display:flex;align-items:center;gap:10px;
+      padding:10px 14px;border-bottom:1px solid var(--border);
+      transition:background 0.1s;}
+    .file-item:last-child{border-bottom:none;}
+    .file-item.detecting{opacity:0.6;}
+    .file-icon{font-size:20px;flex-shrink:0;}
+    .file-info{flex:1;min-width:0;}
+    .file-name{font-size:12px;font-weight:600;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .file-type{font-size:11px;margin-top:2px;}
+    .file-type.detected{color:var(--green);font-weight:600;}
+    .file-type.detecting{color:var(--text-3);}
+    .file-type.failed{color:var(--amber);}
+    .file-remove{background:none;border:none;color:var(--text-3);cursor:pointer;
+      font-size:15px;padding:3px 5px;border-radius:4px;flex-shrink:0;transition:all 0.15s;}
+    .file-remove:hover{background:var(--hover);color:var(--red);}
+
+    /* Spinner */
+    .spinner{width:14px;height:14px;border:2px solid var(--border);
+      border-top-color:var(--accent);border-radius:50%;
+      animation:spin 0.7s linear infinite;flex-shrink:0;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Error */
+    .error-bar{background:#fef2f2;border:1.5px solid rgba(220,38,38,0.3);
+      border-radius:8px;padding:9px 12px;color:var(--red);font-size:12px;display:none;}
+
+    /* Extract button */
+    .extract-btn{width:100%;padding:13px;background:var(--accent);border:none;
+      border-radius:9px;color:#fff;font-size:14px;font-weight:700;
+      cursor:pointer;transition:all 0.15s;
+      box-shadow:0 2px 6px rgba(37,99,235,0.35);}
+    .extract-btn:hover:not(:disabled){background:var(--accent-dim);}
+    .extract-btn:disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
+
+    /* Progress */
+    .progress-wrap{display:none;}
+    .progress-track{height:5px;background:var(--elevated);border-radius:3px;
+      overflow:hidden;border:1px solid var(--border);margin-bottom:6px;}
+    .progress-bar{height:100%;background:var(--accent);border-radius:3px;
+      width:0%;transition:width 0.4s ease;}
+    .progress-label{font-size:11px;color:var(--text-3);text-align:center;}
+
+    @media(max-width:720px){
+      .main{flex-direction:column;}
+      .right-col{width:100%;position:static;}
+    }
+  </style>
+</head>
+<body>
+
+<style>
+.sf-sidebar {
+  position: fixed; left: 0; top: 0; width: 220px; height: 100vh;
+  background: #fff; border-right: 1px solid #e4e7ef;
+  display: flex; flex-direction: column; padding: 20px 0;
+  z-index: 1000; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+.sf-sidebar .sf-brand { padding: 0 20px 16px; font-size: 17px; font-weight: 800; color: #111827; letter-spacing:-0.3px; border-bottom: 1px solid #f0f2f7; margin-bottom: 12px; }
+.sf-sidebar .sf-brand em { font-style: normal; color: #2563eb; }
+.sf-sidebar .sf-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 10px; }
+.sf-sidebar .sf-nav a {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
+  color: #4b5563; text-decoration: none; font-size: 13.5px; font-weight: 500;
+}
+.sf-sidebar .sf-nav a:hover { background: #f4f6fa; color: #111827; }
+.sf-sidebar .sf-nav a.active { background: #eff4ff; color: #2563eb; font-weight: 700; }
+.sf-sidebar .sf-divider { height:1px; background:#f0f2f7; margin: 8px 12px; }
+.sf-sidebar .sf-user { padding: 12px 20px; border-top: 1px solid #f0f2f7; }
+.sf-sidebar .sf-user-name { font-size: 12.5px; font-weight: 600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sf-sidebar .sf-user-email { font-size: 11px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+.sf-sidebar .sf-signout { display:inline-block; margin-top:8px; font-size:12px; color:#6b7280; text-decoration:none; }
+.sf-sidebar .sf-signout:hover { color:#dc2626; }
+.sf-page-wrap { margin-left: 220px; min-height: 100vh; }
+.sf-mobile-toggle { display:none; position:fixed; top:14px; left:14px; z-index:1001; background:#fff; border:1px solid #e4e7ef; border-radius:8px; width:38px; height:38px; align-items:center; justify-content:center; cursor:pointer; font-size:18px; }
+@media (max-width: 900px) {
+  .sf-sidebar { transform: translateX(-100%); transition: transform .2s; }
+  .sf-sidebar.open { transform: translateX(0); }
+  .sf-page-wrap { margin-left: 0; }
+  .sf-mobile-toggle { display:flex !important; }
+}
+</style>
+<button class="sf-mobile-toggle" onclick="document.getElementById('sfSidebar').classList.toggle('open')">&#9776;</button>
+<nav class="sf-sidebar" id="sfSidebar">
+  <div class="sf-brand">
+    Mitra <em>Fill</em>
+  </div>
+  <div class="sf-nav">
+    <a href="/app" class="active">Home</a>
+    <a href="/review" class="">Review</a>
+    <div class="sf-divider" id="sfAdminDivider" style="display:none"></div>
+    <a href="/admin/dashboard" id="sfAdminDashLink" class="" style="display:none">Dashboard</a>
+    <a href="/admin/exams" id="sfAdminExamsLink" class="" style="display:none">Manage Exams</a>
+  </div>
+  <div class="sf-user">
+    <div class="sf-user-name" id="sfUserName">&nbsp;</div>
+    <div class="sf-user-email" id="sfUserEmail"></div>
+    <a href="/auth/logout" class="sf-signout">Sign out</a>
+    <div class="status-pill" style="margin-top:10px">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusLabel">Checking…</span>
+    </div>
+  </div>
+</nav>
+<div class="sf-page-wrap">
+
+<div class="main">
+
+  <!-- Left: drop zone + contact -->
+  <div class="upload-col">
+
+    <!-- Exam / application selector — drives photo & signature resizing -->
+    <div class="exam-card">
+      <label class="exam-label" for="examSelect">Examination / Application</label>
+      <select class="exam-select" id="examSelect">
+        <option value="none">— Generic (no fixed size) —</option>
+      </select>
+      <div class="exam-hint-global" id="examHintGlobal">Photo &amp; signature will be auto-resized to this exam's requirements.</div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg"/>
+      <span class="drop-icon">📁</span>
+      <div class="drop-title">Select or Drop Files</div>
+      <div class="drop-sub">Mitra Fill will automatically detect each document type</div>
+      <div class="drop-formats">
+        <span class="fmt-badge">JPG</span>
+        <span class="fmt-badge">PNG</span>
+        <span class="fmt-badge">PDF</span>
+      </div>
+      <div class="drop-limit">Up to 10 files · Max 10 MB each</div>
+    </div>
+
+    <!-- Contact details + Applicant photo/signature — unified into one
+         panel instead of three separate stacked boxes -->
+    <div class="contact-section">
+      <div class="contact-title">Contact Details</div>
+      <div class="contact-row">
+        <div class="inp-group">
+          <label class="inp-label" for="inp-mobile">Mobile Number</label>
+          <input class="inp" id="inp-mobile" type="tel" placeholder="10-digit number" maxlength="10" oninput="onContactInput('mobile',this)"/>
+          <div class="inp-error" id="err-mobile"></div>
+        </div>
+        <div class="inp-group">
+          <label class="inp-label" for="inp-email">Email Address</label>
+          <input class="inp" id="inp-email" type="email" placeholder="customer@example.com" oninput="onContactInput('email',this)" onblur="onEmailBlur(this)"/>
+          <div class="inp-error" id="err-email"></div>
+        </div>
+      </div>
+
+      <div class="details-divider"></div>
+
+      <div class="contact-title">Photo &amp; Signature </div>
+      <div class="assets-row">
+        <div class="asset-card" id="photoCard">
+          <div class="asset-card-head">
+            <span class="asset-title">Applicant Photo</span>
+            <span class="asset-optional">Optional</span>
+          </div>
+          <div class="asset-hint" id="photoHint"></div>
+          <div id="photoBody"></div>
+        </div>
+        <div class="asset-card" id="signatureCard">
+          <div class="asset-card-head">
+            <span class="asset-title">Signature</span>
+            <span class="asset-optional">Optional</span>
+          </div>
+          <div class="asset-hint" id="signatureHint"></div>
+          <div id="signatureBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-bar" id="errorBar"></div>
+  </div>
+
+  <!-- Right: file list + extract -->
+  <div class="right-col">
+    <div class="files-card">
+      <div class="files-header">
+        <span>Documents</span>
+        <span class="files-count" id="filesCount">0 files</span>
+      </div>
+      <div id="fileListWrap">
+        <div class="files-empty">
+          <div class="files-empty-icon">🗂️</div>
+          <div>No files added yet</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="extract-btn" id="extractBtn" disabled>Extract Data →</button>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="progress-label" id="progressLabel">Uploading…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+// Same-origin — this page is always served by the backend that should
+// receive its own API calls, whether that's the local dev server or the
+// deployed instance. A hardcoded remote domain here breaks local testing
+// with a cross-origin CORS failure the moment the page is served from
+// anywhere else.
+const API = "";
+
+// Map from document type → display info
+const TYPE_INFO = {
+  aadhaar:             {icon:"🪪", label:"Aadhaar Card"},
+  pan:                 {icon:"💳", label:"PAN Card"},
+  passport:            {icon:"📘", label:"Passport"},
+  driving_license:     {icon:"🚗", label:"Driving Licence"},
+  voter_id:            {icon:"🗳️", label:"Voter ID"},
+  certificate_ssc:     {icon:"📜", label:"SSC Certificate / Memo"},
+  certificate_inter:   {icon:"📋", label:"Intermediate Certificate / Memo"},
+  certificate_degree:  {icon:"🎓", label:"Degree Certificate"},
+  bank_passbook:       {icon:"🏦", label:"Bank Passbook"},
+  salary_slip:         {icon:"💰", label:"Salary Slip"},
+  generic:             {icon:"📄", label:"Document"},
+  auto:                {icon:"📄", label:"Document"},
+};
+
+// State
+const queue = [];   // [{id, file, status:'pending'|'detecting'|'done'|'failed', docType, label}]
+const textInputs = {};
+const assets = { photo: null, signature: null };   // {sourceFile, dataUrl, sizeBytes, width, height, name}
+let selectedExam = "none";
+let nextId = 0;
+
+// ── Exam / application list + photo/signature specs ──────────────────
+// Previously hardcoded here as EXAM_PRESETS; now fetched from the admin-
+// configurable database via /api/v1/exams and /api/v1/exams/{code}/photo-specs,
+// so new exams can be added from the admin UI without redeploying this page.
+const GENERIC_SPEC = { maxKB: 50 };
+const examSpecCache = {};  // code -> { photo: {...}, signature: {...} }
+
+async function loadExamList() {
+  try {
+    const res = await fetch(API + "/api/v1/exams");
+    if (!res.ok) return;
+    const exams = await res.json();
+    const sel = document.getElementById("examSelect");
+    exams.forEach(function(e) {
+      const opt = document.createElement("option");
+      opt.value = e.code;
+      opt.textContent = e.display_name;
+      sel.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn("[MitraFill] Could not load exam list:", err.message);
+  }
+}
+
+async function loadExamSpecs(code) {
+  if (code === "none" || examSpecCache[code]) return;
+  try {
+    const res = await fetch(API + "/api/v1/exams/" + encodeURIComponent(code) + "/photo-specs");
+    if (!res.ok) return;
+    const specs = await res.json();
+    const entry = {};
+    specs.forEach(function(s) {
+      entry[s.asset_type] = {
+        width: s.width_px, height: s.height_px,
+        minKB: s.min_kb || 0, maxKB: s.max_kb,
+      };
+    });
+    examSpecCache[code] = entry;
+    renderAssetHints();
+  } catch (err) {
+    console.warn("[MitraFill] Could not load specs for", code, err.message);
+  }
+}
+
+function getSpec(kind) {
+  const entry = examSpecCache[selectedExam];
+  if (entry && entry[kind]) return entry[kind];
+  return GENERIC_SPEC;
+}
+
+function specLabel(spec) {
+  if (spec.width && spec.height) {
+    return spec.width + '×' + spec.height + 'px · ' + spec.minKB + '–' + spec.maxKB + ' KB';
+  }
+  return 'Auto-resized · ≤' + spec.maxKB + ' KB';
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  checkHealth();
+  setupDropZone();
+  document.getElementById("fileInput").addEventListener("change", onFilesSelected);
+  document.getElementById("extractBtn").addEventListener("click", extract);
+  document.getElementById("examSelect").addEventListener("change", onExamChange);
+  loadExamList();
+  renderAssetHints();
+  renderAssetCard("photo");
+  renderAssetCard("signature");
+});
+
+function onExamChange(e) {
+  selectedExam = e.target.value;
+  renderAssetHints();
+  loadExamSpecs(selectedExam).then(function() {
+    // Re-compress any already-uploaded assets against the new requirements
+    ["photo", "signature"].forEach(function(kind) {
+      if (assets[kind] && assets[kind].sourceFile) processAsset(kind);
+    });
+  });
+}
+
+function renderAssetHints() {
+  document.getElementById("photoHint").textContent = specLabel(getSpec("photo"));
+  document.getElementById("signatureHint").textContent = specLabel(getSpec("signature"));
+}
+
+// ── Applicant photo / signature capture ────────────────────────────
+function renderAssetCard(kind) {
+  const body = document.getElementById(kind + "Body");
+  const a = assets[kind];
+  if (!a) {
+    body.innerHTML =
+      '<label class="asset-upload-btn">' +
+        '📤 Upload ' + (kind === "photo" ? "Photo" : "Signature") +
+        '<input type="file" accept="image/*" id="' + kind + 'Input"/>' +
+      '</label>';
+    document.getElementById(kind + "Input").addEventListener("change", function(e) { onAssetSelected(e, kind); });
+    return;
+  }
+  const spec = getSpec(kind);
+  const kb = (a.sizeBytes / 1024).toFixed(1);
+  const maxBytes = spec.maxKB * 1024;
+  const minBytes = (spec.minKB || 0) * 1024;
+  const outOfRange = a.sizeBytes > maxBytes || a.sizeBytes < minBytes;
+  body.innerHTML =
+    '<div class="asset-preview">' +
+      '<img src="' + a.dataUrl + '" alt="' + kind + '"/>' +
+      '<span class="asset-size' + (outOfRange ? " over" : "") + '">' + kb + ' KB · ' + a.width + '×' + a.height + (outOfRange ? "" : " ✓") + '</span>' +
+      '<div class="asset-actions">' +
+        '<a class="asset-download" href="' + a.dataUrl + '" download="' + a.name + '">⬇ Download</a>' +
+        '<button class="asset-remove" onclick="removeAsset(\'' + kind + '\')">✕ Remove</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderAssetLoading(kind) {
+  document.getElementById(kind + "Body").innerHTML =
+    '<div class="asset-loading">Compressing…</div>';
+}
+
+function onAssetSelected(e, kind) {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showError("Please choose an image file for " + kind + ".");
+    return;
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    showError((kind === "photo" ? "Photo" : "Signature") + " is too large to process (max 15 MB).");
+    return;
+  }
+  assets[kind] = { sourceFile: file };
+  processAsset(kind);
+}
+
+function processAsset(kind) {
+  const a = assets[kind];
+  if (!a || !a.sourceFile) return;
+  renderAssetLoading(kind);
+  const spec = getSpec(kind);
+  compressImage(a.sourceFile, spec).then(function(result) {
+    assets[kind] = {
+      sourceFile: a.sourceFile,
+      dataUrl: result.dataUrl,
+      sizeBytes: result.sizeBytes,
+      width: result.width,
+      height: result.height,
+      name: (kind === "photo" ? "photo" : "signature") + ".jpg",
+    };
+    renderAssetCard(kind);
+  }).catch(function() {
+    showError("Could not process that image. Try a different file.");
+    assets[kind] = null;
+    renderAssetCard(kind);
+  });
+}
+
+function removeAsset(kind) {
+  assets[kind] = null;
+  renderAssetCard(kind);
+}
+
+// Loads a File into an <img>, then re-encodes it as JPEG, stepping quality
+// down (and dimensions down once quality bottoms out) until the output is
+// under the spec's maxKB — government portals typically cap photo/signature
+// uploads at 20-50 KB, and some (UPSC, SSC, IBPS, GATE, NEET) require an
+// exact pixel size too.
+function loadImage(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function() {
+      const img = new Image();
+      img.onload = function() { resolve(img); };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function dataUrlSizeBytes(dataUrl) {
+  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  return Math.round(base64.length * 3 / 4);
+}
+
+// Scales the source image to cover the target box, then center-crops to
+// the exact target dimensions (like CSS object-fit:cover) — preserves
+// aspect ratio instead of stretching/distorting the face or signature.
+function drawCover(ctx, img, targetW, targetH) {
+  const srcW = img.naturalWidth || img.width;
+  const srcH = img.naturalHeight || img.height;
+  const srcRatio = srcW / srcH;
+  const dstRatio = targetW / targetH;
+  let sx, sy, sw, sh;
+  if (srcRatio > dstRatio) {
+    sh = srcH;
+    sw = srcH * dstRatio;
+    sx = (srcW - sw) / 2;
+    sy = 0;
+  } else {
+    sw = srcW;
+    sh = srcW / dstRatio;
+    sx = 0;
+    sy = (srcH - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+}
+
+async function compressImage(file, spec) {
+  const img = await loadImage(file);
+  const maxBytes = spec.maxKB * 1024;
+  const fixedDims = !!(spec.width && spec.height);
+
+  let width, height;
+  if (fixedDims) {
+    width = spec.width;
+    height = spec.height;
+  } else {
+    const MAX_DIM = 1000;
+    width = img.naturalWidth || img.width;
+    height = img.naturalHeight || img.height;
+    if (Math.max(width, height) > MAX_DIM) {
+      const scale = MAX_DIM / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+  }
+
+  // Start at max quality — for small fixed exam dimensions (e.g. SSC's
+  // 40×60 signature) that's the only way to get close to the portal's
+  // minimum KB requirement; quality only comes down if we overshoot maxKB.
+  let quality = 1.0;
+  let dataUrl = "";
+  let sizeBytes = Infinity;
+
+  for (let attempt = 0; attempt < 14; attempt++) {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    // Flatten transparency (PNG signatures) onto white before JPEG encode
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    if (fixedDims) {
+      drawCover(ctx, img, width, height);
+    } else {
+      ctx.drawImage(img, 0, 0, width, height);
+    }
+
+    dataUrl = canvas.toDataURL("image/jpeg", quality);
+    sizeBytes = dataUrlSizeBytes(dataUrl);
+
+    if (sizeBytes <= maxBytes) break;
+
+    if (quality > 0.3) {
+      quality -= 0.08;
+    } else if (!fixedDims) {
+      // Generic mode has no fixed pixel requirement — shrink as a last resort
+      width = Math.round(width * 0.85);
+      height = Math.round(height * 0.85);
+    } else {
+      break; // exam presets keep their exact required pixel size — best effort
+    }
+  }
+
+  return { dataUrl, sizeBytes, width, height };
+}
+
+async function checkHealth() {
+  try {
+    var r = await fetch(API + "/api/v1/health", {signal:AbortSignal.timeout(3000)});
+    var ok = r.ok;
+    document.getElementById("statusDot").className = "status-dot"+(ok?" online":"");
+    document.getElementById("statusLabel").textContent = ok ? "Backend online" : "Backend offline";
+  } catch(e) {
+    document.getElementById("statusLabel").textContent = "Backend offline";
+  }
+}
+
+function setupDropZone() {
+  var zone = document.getElementById("dropZone");
+  zone.addEventListener("dragover", function(e) {
+    e.preventDefault();
+    zone.classList.add("drag-over");
+  });
+  zone.addEventListener("dragleave", function(e) {
+    if (!zone.contains(e.relatedTarget)) zone.classList.remove("drag-over");
+  });
+  zone.addEventListener("drop", function(e) {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
+    addFiles(Array.from(e.dataTransfer.files));
+  });
+}
+
+function onFilesSelected(e) {
+  addFiles(Array.from(e.target.files));
+  e.target.value = ""; // reset so same file can be re-added
+}
+
+function onText(key, value) {
+  var v = value.trim();
+  if (v) textInputs[key] = v; else delete textInputs[key];
+  updateExtractBtn();
+}
+
+// Mirrors backend/app/core/validators.py exactly — mobile: 10 digits
+// starting 6-9; email: basic sanity check. Kept in sync deliberately so
+// client and server never disagree about what's valid. This is
+// immediate feedback only — the server re-validates independently and
+// is the actual enforcement (client-side checks can always be bypassed).
+const contactValid = {mobile: true, email: true};
+
+function checkContact(key, v) {
+  if (!v) return {isValid: true, message: ""};
+  if (key === "mobile") {
+    return /^[6-9]\d{9}$/.test(v)
+      ? {isValid: true, message: ""}
+      : {isValid: false, message: "Must be 10 digits, starting with 6-9."};
+  }
+  if (key === "email") {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+      ? {isValid: true, message: ""}
+      : {isValid: false, message: "Doesn't look like a valid email."};
+  }
+  return {isValid: true, message: ""};
+}
+
+function applyContactState(key, el, show) {
+  var v = el.value.trim();
+  var result = checkContact(key, v);
+  var displayInvalid = show && !result.isValid;
+
+  // contactValid tracks the SURFACED state, not the raw regex result of
+  // a possibly-still-being-typed value — so the Extract button doesn't
+  // disable itself over a field that's simply incomplete so far.
+  contactValid[key] = !displayInvalid;
+
+  var errEl = document.getElementById("err-" + key);
+  el.classList.toggle("invalid", displayInvalid);
+  errEl.textContent = displayInvalid ? result.message : "";
+}
+
+function onContactInput(key, el) {
+  var v = el.value.trim();
+  // Only show a red/error state once the operator has typed the FULL
+  // expected length for mobile (10 digits) — never on blur/leaving the
+  // field early, since both fields are optional and someone clicking
+  // away mid-entry (e.g. to go upload a document first) isn't
+  // necessarily "done" or wrong, just not finished yet. Email has no
+  // fixed length to key off of, so it never shows an inline error at
+  // all client-side — an invalid email is still caught, just at the
+  // server when Extract is actually clicked (see routes.py), which is
+  // the real enforcement point regardless.
+  var readyToShow = key === "mobile" && v.length === 10;
+  applyContactState(key, el, readyToShow);
+  onText(key, v);
+}
+
+// Email has no fixed length like mobile does, so there's no natural
+// "they just finished typing" trigger during input — blur (leaving the
+// field) is the best available signal instead. This is scoped to email
+// ONLY: mobile deliberately does NOT use blur, since a short partial
+// number leaving focus (e.g. tabbing away mid-entry) isn't a reliable
+// "done" signal the way it is for a free-text field like email.
+function onEmailBlur(el) {
+  applyContactState("email", el, true);
+}
+
+// ── File handling ─────────────────────────────────────────────────
+function addFiles(newFiles) {
+  hideError();
+  var toAdd = [];
+
+  for (var i = 0; i < newFiles.length; i++) {
+    var f = newFiles[i];
+    if (queue.length + toAdd.length >= 10) {
+      showError("Maximum 10 files allowed.");
+      break;
+    }
+    if (f.size > 10*1024*1024) {
+      showError(f.name + " is too large (max 10 MB) — skipped.");
+      continue;
+    }
+    toAdd.push({
+      id: nextId++,
+      file: f,
+      status: "detecting",
+      docType: "auto",
+      label: "Detecting…",
+      icon: "📄",
+    });
+  }
+
+  toAdd.forEach(function(item) { queue.push(item); });
+  renderList();
+  updateExtractBtn();
+
+  // Classify each new file
+  toAdd.forEach(function(item) { classifyFile(item); });
+}
+
+async function classifyFile(item) {
+  try {
+    // Use the classifier endpoint — sends just 200px thumbnail for speed
+    var form = new FormData();
+    form.append("files", item.file);
+    form.append("document_types", "auto");
+
+    var r = await fetch(API + "/api/v1/classify", {method:"POST", body:form, signal:AbortSignal.timeout(15000)});
+
+    if (r.ok) {
+      var data = await r.json();
+      var detected = data.results && data.results[0];
+      if (detected && detected.doc_type && detected.doc_type !== "auto") {
+        var info = TYPE_INFO[detected.doc_type] || TYPE_INFO.generic;
+        item.docType  = detected.doc_type;
+        item.label    = info.label;
+        item.icon     = info.icon;
+        item.status   = "done";
+      } else {
+        // Could not classify — still usable, will be extracted
+        item.docType  = "auto";
+        item.label    = guessFromFilename(item.file.name);
+        item.icon     = "📄";
+        item.status   = "done";
+      }
+    } else {
+      item.status = "done";
+      item.label  = guessFromFilename(item.file.name);
+    }
+  } catch(e) {
+    item.status = "done";
+    item.label  = guessFromFilename(item.file.name);
+  }
+  renderList();
+  updateExtractBtn();
+}
+
+function guessFromFilename(name) {
+  var n = name.toLowerCase();
+  if (n.includes("aadh") || n.includes("uid"))        return TYPE_INFO.aadhaar.label;
+  if (n.includes("pan"))                               return TYPE_INFO.pan.label;
+  if (n.includes("passport"))                          return TYPE_INFO.passport.label;
+  if (n.includes("dl") || n.includes("driving"))       return TYPE_INFO.driving_license.label;
+  if (n.includes("ssc") || n.includes("10th"))         return TYPE_INFO.certificate_ssc.label;
+  if (n.includes("inter") || n.includes("12th"))       return TYPE_INFO.certificate_inter.label;
+  if (n.includes("degree") || n.includes("btech"))     return TYPE_INFO.certificate_degree.label;
+  if (n.includes("bank") || n.includes("passbook"))    return TYPE_INFO.bank_passbook.label;
+  return "Document";
+}
+
+function removeFile(id) {
+  var idx = queue.findIndex(function(i){return i.id===id;});
+  if (idx >= 0) queue.splice(idx, 1);
+  renderList();
+  updateExtractBtn();
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function renderList() {
+  var wrap = document.getElementById("fileListWrap");
+  var count = queue.length;
+  document.getElementById("filesCount").textContent = count + " file" + (count!==1?"s":"");
+
+  if (!count) {
+    wrap.innerHTML = '<div class="files-empty"><div class="files-empty-icon">🗂️</div><div>No files added yet</div></div>';
+    return;
+  }
+
+  wrap.innerHTML = '<div class="file-list">' +
+    queue.map(function(item) {
+      var typeHtml;
+      if (item.status === "detecting") {
+        typeHtml = '<span class="file-type detecting">Detecting type…</span>';
+      } else if (item.status === "done") {
+        typeHtml = '<span class="file-type detected">✓ ' + esc(item.label) + '</span>';
+      } else {
+        typeHtml = '<span class="file-type failed">Could not detect</span>';
+      }
+
+      return '<div class="file-item' + (item.status==="detecting"?" detecting":"") + '">' +
+        (item.status==="detecting"
+          ? '<div class="spinner"></div>'
+          : '<span class="file-icon">' + item.icon + '</span>') +
+        '<div class="file-info">' +
+          '<div class="file-name" title="' + esc(item.file.name) + '">' + esc(truncate(item.file.name, 26)) + '</div>' +
+          typeHtml +
+        '</div>' +
+        '<button class="file-remove" onclick="removeFile(' + item.id + ')" title="Remove">✕</button>' +
+        '</div>';
+    }).join("") +
+    '</div>';
+}
+
+function updateExtractBtn() {
+  var hasFiles = queue.some(function(i){return i.status==="done";});
+  var hasAny   = hasFiles || textInputs.mobile || textInputs.email;
+  var detecting = queue.some(function(i){return i.status==="detecting";});
+  var hasInvalidContact = !contactValid.mobile || !contactValid.email;
+  var btn = document.getElementById("extractBtn");
+  btn.disabled = !hasAny || detecting || hasInvalidContact;
+  if (hasInvalidContact) btn.textContent = "Fix contact details to continue";
+  else if (detecting) btn.textContent = "Detecting documents…";
+  else if (!hasAny) btn.textContent = "Select files to continue";
+  else {
+    var n = queue.filter(function(i){return i.status==="done";}).length;
+    var parts = [];
+    if (n > 0) parts.push(n + " doc" + (n!==1?"s":""));
+    if (textInputs.mobile) parts.push("mobile");
+    if (textInputs.email) parts.push("email");
+    btn.textContent = "Extract Data (" + parts.join(" + ") + ") →";
+  }
+}
+
+// ── Extract ───────────────────────────────────────────────────────
+async function extract() {
+  // Validate contact fields NOW, at the moment of clicking Extract —
+  // this is the one genuinely unambiguous "the operator is done
+  // entering data" signal. Earlier attempts tried validating on blur,
+  // but that falsely flagged fields the operator just hadn't finished
+  // yet (e.g. tabbing to upload a document before finishing the mobile
+  // number). Clicking Extract carries no such ambiguity.
+  var mobileEl = document.getElementById("inp-mobile");
+  var emailEl = document.getElementById("inp-email");
+  applyContactState("mobile", mobileEl, true);
+  applyContactState("email", emailEl, true);
+  if (!contactValid.mobile || !contactValid.email) {
+    var badEl = !contactValid.mobile ? mobileEl : emailEl;
+    badEl.scrollIntoView({behavior: "smooth", block: "center"});
+    badEl.focus();
+    return;  // don't proceed — the now-visible red border + message explain why
+  }
+
+  var btn = document.getElementById("extractBtn");
+  btn.disabled = true;
+  btn.textContent = "Processing…";
+  showProgress("Uploading…", 20);
+  hideError();
+
+  var form = new FormData();
+  var types = [];
+
+  queue.forEach(function(item) {
+    if (item.status === "done") {
+      form.append("files", item.file);
+      types.push(item.docType);
+    }
+  });
+  form.append("document_types", types.join(","));
+  if (textInputs.mobile) form.append("manual_mobile", textInputs.mobile);
+  if (textInputs.email)  form.append("manual_email",  textInputs.email);
+
+  var timer = setInterval(anim, 800);
+  try {
+    showProgress("Running Data Extraction…", 45);
+    var res = await fetch(API + "/api/v1/process-session", {method:"POST", body:form});
+    clearInterval(timer);
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Server error " + res.status);
+
+    if (textInputs.mobile) data.profile.mobile = {value:textInputs.mobile,confidence:100,needs_review:false,source_doc:"manual",candidates:[],match_count:1};
+    if (textInputs.email)  data.profile.email  = {value:textInputs.email, confidence:100,needs_review:false,source_doc:"manual",candidates:[],match_count:1};
+    if (assets.photo)      data.profile.applicant_photo     = assets.photo.dataUrl;
+    if (assets.signature)  data.profile.applicant_signature = assets.signature.dataUrl;
+
+    showProgress("Done ✓", 100);
+    await new Promise(function(r){setTimeout(r,400);});
+    data.exam_code = selectedExam;
+    sessionStorage.setItem("smartfill_profile", JSON.stringify(data));
+    window.location.href = "/review";
+  } catch(err) {
+    clearInterval(timer);
+    hideProgress();
+    btn.disabled = false;
+    updateExtractBtn();
+    showError(err.message || "Extraction failed. Please try again.");
+  }
+}
+
+var _pv = 0;
+function showProgress(l,v){document.getElementById("progressWrap").style.display="block";document.getElementById("progressLabel").textContent=l;if(v!==undefined){_pv=v;document.getElementById("progressBar").style.width=v+"%";}}
+function anim(){if(_pv<88){_pv+=Math.random()*5;document.getElementById("progressBar").style.width=_pv+"%";}}
+function hideProgress(){document.getElementById("progressWrap").style.display="none";}
+function showError(m){var e=document.getElementById("errorBar");e.textContent="⚠ "+m;e.style.display="block";}
+function hideError(){document.getElementById("errorBar").style.display="none";}
+function truncate(s,n){return s.length>n?s.slice(0,n-1)+"…":s;}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+</script>
+</div>
+<script>
+(async function(){
+  try {
+    const res = await fetch('/auth/me');
+    if (!res.ok) return;
+    const me = await res.json();
+    document.getElementById('sfUserName').textContent = me.name || me.email;
+    document.getElementById('sfUserEmail').textContent = me.name ? me.email : '';
+    if (me.is_admin) {
+      document.getElementById('sfAdminDashLink').style.display = 'flex';
+      document.getElementById('sfAdminExamsLink').style.display = 'flex';
+      document.getElementById('sfAdminDivider').style.display = 'block';
+    }
+  } catch (e) { /* nav still works without user info */ }
+})();
+</script>
+</body>
+</html>
