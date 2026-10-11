@@ -12,7 +12,7 @@ opencv-python-headless
 pytesseract
 PyMuPDF
 pdf2image
-
+itsdangerous
 # Auth (Google login) + Postgres (admin dashboard / user tracking)
 authlib
 itsdangerous
