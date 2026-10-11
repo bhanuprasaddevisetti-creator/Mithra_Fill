@@ -7,3 +7,4 @@ dependencies = ["fastapi"]
 [tool.vercel]
 entrypoint = "backend.app.main:app"
 dependencies = ["fastapi", "itsdangerous"]
+
