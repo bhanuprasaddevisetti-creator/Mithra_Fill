@@ -11,6 +11,7 @@ pydantic-settings
 opencv-python-headless
 pytesseract
 PyMuPDF
+numpy
 pdf2image
 itsdangerous
 # Auth (Google login) + Postgres (admin dashboard / user tracking)
