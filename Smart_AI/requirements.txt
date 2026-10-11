@@ -18,4 +18,9 @@ authlib
 itsdangerous
 sqlalchemy
 psycopg2-binary
+httpx
+requests
+jinja2
+uvicorn
+
 
